@@ -1,0 +1,5 @@
+# Force LF so shell scripts and Dockerfiles work inside Linux containers when cloned on Windows
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.ico binary
