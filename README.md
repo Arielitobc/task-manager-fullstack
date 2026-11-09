@@ -206,6 +206,7 @@ flowchart LR
 
 ---
 
-## GenAI
+## Presentation & GenAI
 
-See [GENAI.md](GENAI.md).
+- [PRESENTATION.md](PRESENTATION.md): user story, thought process, architecture, requirements checklist and demo script.
+- [GENAI.md](GENAI.md): prompts, AI output, validation and corrections.
