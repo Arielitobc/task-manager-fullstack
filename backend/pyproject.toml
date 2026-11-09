@@ -13,7 +13,8 @@ dependencies = [
   "pydantic-settings>=2.6",
   "email-validator>=2.2",
   "pyjwt>=2.10",
-  "passlib[bcrypt]>=1.7",
+  "bcrypt>=4.2",
+  "python-multipart>=0.0.18",
   "slowapi>=0.1.9",
   "celery[redis]>=5.4",
 ]
@@ -34,15 +35,28 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "SIM", "N"]
+# Keep explicit Generic[T]: clearer for readers and fully supported by Pydantic.
+ignore = ["UP046"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q --cov=app --cov-report=term-missing --cov-fail-under=80"
 
 [tool.coverage.run]
-omit = ["app/infrastructure/celery_app.py"]
+omit = ["app/infrastructure/seed.py"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["N802"]
 
 [tool.mypy]
 python_version = "3.12"
 strict = true
 plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = ["celery.*", "slowapi.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["app.infrastructure.celery_app", "app.main"]
+disallow_untyped_decorators = false

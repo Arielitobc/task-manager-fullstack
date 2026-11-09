@@ -1,8 +1,17 @@
-# Step 1: infrastructure services. Backend, worker and frontend are added in the next steps.
+x-backend-env: &backend-env
+  DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-taskuser}:${POSTGRES_PASSWORD:-taskpass}@db:5432/${POSTGRES_DB:-tasks}
+  REDIS_URL: redis://redis:6379/0
+  RATE_LIMIT_STORAGE_URL: redis://redis:6379/1
+  JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-me-in-production-please-32b}
+  CORS_ORIGINS: '["http://localhost:5173","http://localhost:3000"]'
+
 services:
   db:
     image: postgres:16-alpine
-    env_file: .env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-taskuser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-taskpass}
+      POSTGRES_DB: ${POSTGRES_DB:-tasks}
     ports:
       - "5432:5432"
     volumes:
@@ -22,6 +31,47 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+
+  api:
+    build: ./backend
+    environment: *backend-env
+    # Migrations + idempotent seed run on every start, then the API server.
+    command: >
+      sh -c "alembic upgrade head &&
+             python -m app.infrastructure.seed &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  worker:
+    build: ./backend
+    environment: *backend-env
+    command: celery -A app.infrastructure.celery_app worker --loglevel=info
+    depends_on:
+      redis:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: http://localhost:8000/api/v1
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
 
 volumes:
   pgdata:

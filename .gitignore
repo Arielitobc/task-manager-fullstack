@@ -15,6 +15,8 @@ celerybeat-schedule
 # Node
 node_modules/
 dist/
+coverage/
+*.tsbuildinfo
 *.log
 
 # Env / local
@@ -28,3 +30,4 @@ dist/
 !.vscode/extensions.json
 .DS_Store
 Thumbs.db
+frontend-update.zip
